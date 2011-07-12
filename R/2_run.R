@@ -5,6 +5,10 @@ if (VERBOSE)
 	flush.console()
 }
 
+# obviously, this is not an elegant way to repeat an operation, but
+# we do end up with lots of objects in memory to play with (it _is_
+# a tutorial, after all :)
+
 american.text = laply(american.tweets, function(t) t$getText() )
 delta.text = laply(delta.tweets, function(t) t$getText() )
 jetblue.text = laply(jetblue.tweets, function(t) t$getText() )
@@ -38,35 +42,59 @@ all.scores = rbind( american.scores, delta.scores, jetblue.scores,
 if (VERBOSE)
 	print("Plotting score distributions")
 
-g.hist = ggplot(data=all.scores) + # ggplot works on data.frames, always
-		geom_bar(mapping=aes(x=score, fill=airline), binwidth=1) + 
-		facet_grid(airline~.) + # make a separate plot for each airline
-		theme_bw() + scale_fill_brewer() # plain display, nice colors
+# ggplot works on data.frames, always
+g.hist = ggplot(data=all.scores, mapping=aes(x=score, fill=airline) )
+
+# add a bar graph layer. Let it bin the data and compute frequencies
+# (set binwidth=1 since scores are integers)
+g.hist = g.hist + geom_bar( binwidth=1 )
+
+# make a separate plot for each airline
+g.hist = g.hist + facet_grid(airline~.)
+
+# plain display, nice colors
+g.hist = g.hist + theme_bw() + scale_fill_brewer() 
 
 print(g.hist)
-ggsave(file.path(outputDir, 'score_historam.pdf'), g.hist, width=6, height=8)
+ggsave(file.path(outputDir, 'twitter_score_histograms.pdf'), g.hist, width=6, height=5.5)
 
 
 if (VERBOSE)
 	print("Comparing Twitter & ACSI data")
 
-all.scores$very.pos = as.numeric( all.scores$score >= 2 )
-all.scores$very.neg = as.numeric( all.scores$score <= -2 )
+all.scores$very.pos.bool = all.scores$score >= 2
+all.scores$very.neg.bool = all.scores$score <= -2
 
-twitter.df = ddply(all.scores, c('airline', 'code'), summarise, pos.count=sum( very.pos ), neg.count=sum( very.neg ) )
+all.scores$very.pos = as.numeric( all.scores$very.pos.bool )
+all.scores$very.neg = as.numeric( all.scores$very.neg.bool )
 
-twitter.df$all.count = twitter.df$pos.count + twitter.df$neg.count
+twitter.df = ddply(all.scores, c('airline', 'code'), summarise, 
+                   very.pos.count=sum( very.pos ), 
+                   very.neg.count=sum( very.neg ) )
 
-twitter.df$score = round( 100 * twitter.df$pos.count / twitter.df$all.count )
+twitter.df$very.tot = twitter.df$very.pos.count + 
+                        twitter.df$very.neg.count
 
-compare.df = merge(twitter.df, acsi.df, by='code', suffixes=c('.twitter', '.acsi'))
-# compare.df = subset(compare.df, all.count > 100)
+twitter.df$score = round( 100 * twitter.df$very.pos.count / 
+                                twitter.df$very.tot )
 
-g.fit = ggplot( compare.df ) + 
-			geom_point(aes(x=score.twitter, y=score.acsi, color=airline.twitter), size=5) + 
-			geom_smooth(aes(x=score.twitter, y=score.acsi, group=1), se=F, method="lm") +
-			theme_bw() +
-			opts(legend.position=c(0.2, 0.85))
+require(doBy)
+orderBy(~-score, twitter.df)
 
+compare.df = merge(twitter.df, acsi.df, by='code', 
+                   suffixes=c('.twitter', '.acsi'))
+
+
+# build scatter plot
+g.scatter = ggplot( compare.df, aes(x=score.twitter, y=score.acsi) ) + 
+			      geom_point( aes(color=airline.twitter), size=5 ) + 
+			      theme_bw() + opts( legend.position=c(0.2, 0.85) )
+
+# have ggplot2 fit and plot a linear model with R's lm() function
+g.fit = g.scatter + geom_smooth(aes(group=1), se=F, method="lm")
+
+print(g.scatter)
 print(g.fit)
-ggsave(file.path(outputDir, 'twitter_acsi_comparison.pdf'), g.fit, width=7, height=7)
+
+ggsave(file.path(outputDir, 'twitter_acsi_comparison.pdf'), g.scatter, width=7, height=7)
+ggsave(file.path(outputDir, 'twitter_acsi_comparison_with_fit.pdf'), g.fit, width=7, height=7)
