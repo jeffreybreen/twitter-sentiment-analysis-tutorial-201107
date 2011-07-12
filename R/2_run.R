@@ -81,13 +81,13 @@ twitter.df$score = round( 100 * twitter.df$very.pos.count /
 require(doBy)
 orderBy(~-score, twitter.df)
 
-compare.df = merge(twitter.df, acsi.df, by='code', 
+compare.df = merge(twitter.df, acsi.df, by=c('code', 'airline'), 
                    suffixes=c('.twitter', '.acsi'))
 
 
 # build scatter plot
 g.scatter = ggplot( compare.df, aes(x=score.twitter, y=score.acsi) ) + 
-			      geom_point( aes(color=airline.twitter), size=5 ) + 
+			      geom_point( aes(color=airline), size=5 ) + 
 			      theme_bw() + opts( legend.position=c(0.2, 0.85) )
 
 # have ggplot2 fit and plot a linear model with R's lm() function
