@@ -1,3 +1,10 @@
+#
+# scrape.R - scrape web data and cache to the data/ directory:
+#
+#			 * airline-related tweets via twitteR's searchTwitter()
+#			 * ACSI scores with XML's readHTMLTable()
+#
+
 if (VERBOSE)
 	print("Searching Twitter for airline tweets and saving to disk")
 

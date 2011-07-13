@@ -1,3 +1,8 @@
+#
+# 1_load.R - loads Twitter data, Hu & Liu's opinion lexicon, and the ACSI scores from disk
+#
+#			 scrape.R should be run once to collect and cache tweets before running this script.
+#
 
 if (!file.exists(file.path(dataDir, 'american.tweets.RData' )) )
 {

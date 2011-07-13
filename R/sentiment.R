@@ -1,4 +1,15 @@
-
+#' 
+#' score.sentiment() implements a very simple algorithm to estimate
+#' sentiment, assigning a integer score by subtracting the number 
+#' of occurrences of negative words from that of positive words.
+#' 
+#' @param sentences vector of text to score
+#' @param pos.words vector of words of postive sentiment
+#' @param neg.words vector of words of negative sentiment
+#' @param .progress passed to <code>laply()</code> to control of progress bar.
+#' @returnType data.frame
+#' @return data.frame of text and corresponding sentiment scores
+#' @author Jefrey Breen <jbreen@cambridge.aero>
 score.sentiment = function(sentences, pos.words, neg.words, .progress='none')
 {
 	require(plyr)
